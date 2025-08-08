@@ -1,0 +1,11 @@
+{
+  "name": "compute-markets-backend",
+  "module": "entrypoint.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
