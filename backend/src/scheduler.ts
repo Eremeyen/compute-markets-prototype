@@ -3,8 +3,13 @@ import { createWalletClient, http, parseAbi } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import cron from 'node-cron';
 import { logger } from './config/logger';
-import { foundry } from 'viem/chains';
-import { CRON_EXPR, ORACLE_ADDRESS, ORACLE_UPDATER_PRIVATE_KEY, RPC_URL } from './config/config';
+import {
+	CRON_EXPR,
+	ORACLE_ADDRESS,
+	ORACLE_UPDATER_PRIVATE_KEY,
+	RPC_URL,
+	LOCAL_CHAIN,
+} from './config/config';
 
 type PriceWithSource = { source: 'vast' | 'akash'; price: number };
 
@@ -64,13 +69,11 @@ export const publishMedianPrice = async (): Promise<void> => {
 	const nowSec = Math.floor(Date.now() / 1000);
 
 	// Use Combined as source when aggregating multiple feeds
-  await wallet.writeContract({
+	await wallet.writeContract({
 		address: ORACLE_ADDRESS as `0x${string}`,
-		abi: parseAbi([
-			'function updatePrice(uint256 _price, uint256 _ts, uint8 _source)'
-		]),
+		abi: parseAbi(['function updatePrice(uint256 _price, uint256 _ts, uint8 _source)']),
 		functionName: 'updatePrice',
-    chain: foundry,
+		chain: LOCAL_CHAIN,
 		args: [priceFixed, BigInt(nowSec), PriceSource.Combined],
 	});
 
@@ -78,7 +81,7 @@ export const publishMedianPrice = async (): Promise<void> => {
 };
 
 export const startPriceScheduler = (cronExpr = CRON_EXPR): void => {
-  cron.schedule(cronExpr, () => {
+	cron.schedule(cronExpr, () => {
 		publishMedianPrice().catch((err) => logger.error(`publishMedianPrice failed: ${err}`));
 	});
 	logger.info(`Price scheduler started (cron: ${cronExpr})`);
