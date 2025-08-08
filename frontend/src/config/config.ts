@@ -30,3 +30,11 @@ declare module 'wagmi' {
 		config: typeof config;
 	}
 }
+
+// Contract addresses (update these with your deployed addresses)
+export const CONTRACTS = {
+	// From your backend config
+	FORWARD_ESCROW: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as `0x${string}`, // Update with actual ForwardEscrow address
+	H100_ORACLE: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as `0x${string}`, // Update with actual Oracle address
+	// USDC: '0x...' // Add USDC contract address when needed
+} as const;

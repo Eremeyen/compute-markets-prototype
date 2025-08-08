@@ -5,11 +5,25 @@ interface OpenOrderFormProps {
 	onSubmit?: (data: OpenOrderData) => void;
 }
 
+/**
+ * GenAI, clean up this component.
+ * @param param0 
+ * @returns 
+ */
 export function OpenOrderForm({ onSubmit }: OpenOrderFormProps) {
 	const [selectedSide, setSelectedSide] = useState<'Long' | 'Short'>('Long');
 
-	const { isSubmitting, error, submitOrder, clearError, validateOrder, getValidationRules } =
-		useOpenOrder();
+	const { 
+		isSubmitting, 
+		isConfirming, 
+		isSuccess, 
+		error, 
+		transactionHash, 
+		submitOrder, 
+		clearError, 
+		validateOrder, 
+		getValidationRules 
+	} = useOpenOrder();
 
 	const validationRules = getValidationRules();
 
@@ -80,8 +94,23 @@ export function OpenOrderForm({ onSubmit }: OpenOrderFormProps) {
 			<form onSubmit={handleSubmit} className="space-y-4">
 				{/* Error message */}
 				{error && (
-					<div className="p-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-md border border-red-200 dark:border-red-800">
-						{error}
+					<div className="p-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-md border border-red-200 dark:border-red-800 flex items-center justify-between">
+						<span>{error}</span>
+						<button onClick={clearError} className="text-red-400 hover:text-red-600 ml-2">
+							×
+						</button>
+					</div>
+				)}
+
+				{/* Success message */}
+				{isSuccess && transactionHash && (
+					<div className="p-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-md border border-green-200 dark:border-green-800">
+						<div className="flex items-center gap-2">
+							<span>✅ Order submitted successfully!</span>
+						</div>
+						<div className="text-xs text-green-500 dark:text-green-400 mt-1 font-mono">
+							Tx: {transactionHash.slice(0, 10)}...{transactionHash.slice(-8)}
+						</div>
 					</div>
 				)}
 
@@ -142,7 +171,7 @@ export function OpenOrderForm({ onSubmit }: OpenOrderFormProps) {
 					{isSubmitting ? (
 						<>
 							<div className="w-4 h-4 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin"></div>
-							Submitting...
+							{isConfirming ? 'Confirming...' : 'Submitting...'}
 						</>
 					) : (
 						'Open Order'

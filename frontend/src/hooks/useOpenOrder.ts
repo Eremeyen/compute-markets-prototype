@@ -1,55 +1,94 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
+import { ForwardEscrowABI } from '../config/ABIs';
+import { CONTRACTS } from '../config/config';
 
 export interface OpenOrderData {
 	side: 'Long' | 'Short';
-	size: number;
-	expiry: number;
+	size: number; // GPU hours
+	expiry: number; // expiry in minutes (UI) -> will be converted to seconds
+}
+
+export interface OpenOrderResult {
+	success: boolean;
+	orderId?: bigint;
+	transactionHash?: string;
+	error?: string;
 }
 
 export interface OpenOrderState {
 	isSubmitting: boolean;
 	lastSubmittedOrder: OpenOrderData | null;
 	error: string | null;
+	transactionHash: string | null;
+	orderId: bigint | null;
 }
 
 export function useOpenOrder() {
+	const { address, isConnected } = useAccount();
+	const { writeContract, data: transactionHash, error: writeError, isPending } = useWriteContract();
+	
+	const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+		hash: transactionHash,
+	});
+
 	const [state, setState] = useState<OpenOrderState>({
 		isSubmitting: false,
 		lastSubmittedOrder: null,
 		error: null,
+		transactionHash: null,
+		orderId: null,
 	});
 
-	// Submit order handler
-	const submitOrder = useCallback(async (orderData: OpenOrderData) => {
-		setState((prev) => ({ ...prev, isSubmitting: true, error: null }));
+	// Submit order to smart contract
+	const submitOrder = useCallback(async (orderData: OpenOrderData): Promise<OpenOrderResult> => {
+		if (!isConnected || !address) {
+			const error = 'Wallet not connected';
+			setState(prev => ({ ...prev, error }));
+			return { success: false, error };
+		}
+
+		setState(prev => ({ ...prev, isSubmitting: true, error: null, transactionHash: null, orderId: null }));
 
 		try {
-			// TODO: Replace with actual API call
-			console.log('Submitting order:', orderData);
+			console.log('Submitting order to smart contract:', orderData);
 
-			// Simulate API delay
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			// Convert side to enum (0 = Long, 1 = Short)
+			const side = orderData.side === 'Long' ? 0 : 1;
+			
+			// Convert expiry from minutes to seconds
+			const expirySecs = BigInt(orderData.expiry * 60);
+			
+			// Convert size to BigInt
+			const gpuHours = BigInt(orderData.size);
 
-			// TODO: Actual order submission logic here
-			// const result = await orderApi.submitOrder(orderData);
+			// Call the smart contract
+			writeContract({
+				address: CONTRACTS.FORWARD_ESCROW,
+				abi: ForwardEscrowABI,
+				functionName: 'open',
+				args: [side, gpuHours, expirySecs],
+			});
 
-			setState((prev) => ({
+			setState(prev => ({
 				...prev,
-				isSubmitting: false,
 				lastSubmittedOrder: orderData,
 			}));
 
-			return { success: true, orderId: `order_${Date.now()}` };
+			// Return immediately - we'll track the transaction status separately
+			return { success: true };
+
 		} catch (error) {
-			setState((prev) => ({
+			const errorMessage = error instanceof Error ? error.message : 'Failed to submit order';
+			setState(prev => ({
 				...prev,
 				isSubmitting: false,
-				error: error instanceof Error ? error.message : 'Failed to submit order',
+				error: errorMessage,
 			}));
 
-			return { success: false, error: 'Failed to submit order' };
+			return { success: false, error: errorMessage };
 		}
-	}, []);
+	}, [isConnected, address, writeContract]);
 
 	// Clear error state
 	const clearError = useCallback(() => {
@@ -62,6 +101,8 @@ export function useOpenOrder() {
 			isSubmitting: false,
 			lastSubmittedOrder: null,
 			error: null,
+			transactionHash: null,
+			orderId: null,
 		});
 	}, []);
 
@@ -105,10 +146,47 @@ export function useOpenOrder() {
 		[getValidationRules],
 	);
 
+	// Update state when transaction status changes
+	useEffect(() => {
+		if (transactionHash) {
+			setState(prev => ({ 
+				...prev, 
+				transactionHash: transactionHash,
+				isSubmitting: isPending || isConfirming,
+			}));
+		}
+	}, [transactionHash, isPending, isConfirming]);
+
+	// Handle transaction completion
+	useEffect(() => {
+		if (isSuccess && transactionHash) {
+			setState(prev => ({ 
+				...prev, 
+				isSubmitting: false,
+			}));
+		}
+	}, [isSuccess, transactionHash]);
+
+	// Handle write errors
+	useEffect(() => {
+		if (writeError) {
+			setState(prev => ({ 
+				...prev, 
+				isSubmitting: false,
+				error: writeError.message || 'Transaction failed',
+			}));
+		}
+	}, [writeError]);
+
 	return {
 		// State
 		...state,
-
+		isSubmitting: state.isSubmitting || isPending || isConfirming,
+		
+		// Transaction status
+		isConfirming,
+		isSuccess,
+		
 		// Actions
 		submitOrder,
 		clearError,
