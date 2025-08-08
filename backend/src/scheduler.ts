@@ -11,6 +11,8 @@ import {
 	LOCAL_CHAIN,
 } from './config/config';
 
+import { RealisticSimulatedPriceGenerator, DEFAULT_REALISTIC_SCENARIO, REALISTIC_DEMO_SCENARIOS } from './realisticSimulatedPrices';
+
 type PriceWithSource = { source: 'vast' | 'akash'; price: number };
 
 const toFixedPoint = (value: number): bigint => {
@@ -35,7 +37,54 @@ const PriceSource = {
 	Manual: 4,
 } as const;
 
+// Global realistic simulated price generator for demo
+let realisticPriceGenerator: RealisticSimulatedPriceGenerator | null = null;
+
+async function publishPriceToOracle(price: number, source: number): Promise<void> {
+	if (!ORACLE_ADDRESS || !ORACLE_UPDATER_PRIVATE_KEY) {
+		logger.warn(
+			`Oracle publish skipped: set ORACLE_ADDRESS and ORACLE_UPDATER_PRIVATE_KEY constants.`,
+		);
+		return;
+	}
+
+	const account = privateKeyToAccount(`0x${ORACLE_UPDATER_PRIVATE_KEY.replace(/^0x/, '')}`);
+	const wallet = createWalletClient({ account, transport: http(RPC_URL) });
+
+	const priceFixed = toFixedPoint(price);
+	const nowSec = Math.floor(Date.now() / 1000);
+
+	// Use Combined as source when aggregating multiple feeds
+
+	await wallet.writeContract({
+		address: ORACLE_ADDRESS as `0x${string}`,
+		abi: parseAbi(['function updatePrice(uint256 _price, uint256 _ts, uint8 _source)']),
+		functionName: 'updatePrice',
+		chain: LOCAL_CHAIN,
+		args: [priceFixed, BigInt(nowSec), PriceSource.Combined],
+
+	});
+
+	logger.info(`Published price ${price} (fixed ${priceFixed}) at ts=${nowSec}`);
+}
+
 export const publishMedianPrice = async (): Promise<void> => {
+	// For demo: use realistic simulated prices based on real market data
+	if (realisticPriceGenerator) {
+		const simulatedPrice = await realisticPriceGenerator.getCurrentPrice();
+		const realMarketPrice = realisticPriceGenerator.getRealMarketPrice();
+
+		if (realMarketPrice) {
+			logger.info(`Using realistic simulated price: $${simulatedPrice.toFixed(4)}/hour (based on real market: $${realMarketPrice.toFixed(4)}/hour)`);
+		} else {
+			logger.info(`Using realistic simulated price: $${simulatedPrice.toFixed(4)}/hour (fallback mode)`);
+		}
+
+		await publishPriceToOracle(simulatedPrice, PriceSource.Manual);
+		return;
+	}
+
+	// Fallback to real prices if simulation is not enabled
 	const tasks: Promise<PriceWithSource | null>[] = [
 		(async () => {
 			const p = await getH100SXMPrice();
@@ -55,36 +104,41 @@ export const publishMedianPrice = async (): Promise<void> => {
 		return;
 	}
 
-	if (!ORACLE_ADDRESS || !ORACLE_UPDATER_PRIVATE_KEY) {
-		logger.warn(
-			`Oracle publish skipped: set ORACLE_ADDRESS and ORACLE_UPDATER_PRIVATE_KEY constants.`,
-		);
-		return;
-	}
-
-	const account = privateKeyToAccount(`0x${ORACLE_UPDATER_PRIVATE_KEY.replace(/^0x/, '')}`);
-	const wallet = createWalletClient({ account, transport: http(RPC_URL) });
-
-	const priceFixed = toFixedPoint(m);
-	const nowSec = Math.floor(Date.now() / 1000);
-
-	// Use Combined as source when aggregating multiple feeds
-	await wallet.writeContract({
-		address: ORACLE_ADDRESS as `0x${string}`,
-		abi: parseAbi(['function updatePrice(uint256 _price, uint256 _ts, uint8 _source)']),
-		functionName: 'updatePrice',
-		chain: LOCAL_CHAIN,
-		args: [priceFixed, BigInt(nowSec), PriceSource.Combined],
-	});
-
-	logger.info(`Published median price ${m} (fixed ${priceFixed}) at ts=${nowSec}`);
+	await publishPriceToOracle(m, PriceSource.Combined);
 };
 
 export const startPriceScheduler = (cronExpr = CRON_EXPR): void => {
+
+	// Initialize realistic simulated price generator for demo
+	realisticPriceGenerator = new RealisticSimulatedPriceGenerator(DEFAULT_REALISTIC_SCENARIO);
+	logger.info('Realistic simulated price generator initialized for demo mode');
+
 	cron.schedule(cronExpr, () => {
 		publishMedianPrice().catch((err) => logger.error(`publishMedianPrice failed: ${err}`));
 	});
 	logger.info(`Price scheduler started (cron: ${cronExpr})`);
+};
+
+// Demo control functions
+export const setDemoScenario = (scenario: keyof typeof REALISTIC_DEMO_SCENARIOS): void => {
+	if (realisticPriceGenerator) {
+		realisticPriceGenerator.updateConfig(REALISTIC_DEMO_SCENARIOS[scenario]);
+		logger.info(`Demo scenario changed to: ${scenario}`);
+	}
+};
+
+export const getCurrentSimulatedPrice = async (): Promise<number | null> => {
+	return realisticPriceGenerator ? await realisticPriceGenerator.getCurrentPrice() : null;
+};
+
+export const getRealMarketPrice = (): number | null => {
+	return realisticPriceGenerator ? realisticPriceGenerator.getRealMarketPrice() : null;
+};
+
+export const refreshRealMarketPrice = async (): Promise<void> => {
+	if (realisticPriceGenerator) {
+		await realisticPriceGenerator.refreshRealMarketPrice();
+	}
 };
 
 if (import.meta.main) {
