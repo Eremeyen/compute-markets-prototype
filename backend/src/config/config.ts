@@ -14,7 +14,7 @@ export const ORACLE_UPDATER_PRIVATE_KEY: string | '' =
 // Cron expression (with seconds field) — every 30 seconds
 export const CRON_EXPR = '*/30 * * * * *';
 
-export const chain: Chain = defineChain({
+export const LOCAL_CHAIN: Chain = defineChain({
 	id: 31337,
 	name: 'Foundry',
 	nativeCurrency: {
