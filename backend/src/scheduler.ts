@@ -3,9 +3,19 @@ import { createWalletClient, http, parseAbi } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import cron from 'node-cron';
 import { logger } from './config/logger';
-import { foundry } from 'viem/chains';
-import { CRON_EXPR, ORACLE_ADDRESS, ORACLE_UPDATER_PRIVATE_KEY, RPC_URL } from './config/config';
-import { RealisticSimulatedPriceGenerator, DEFAULT_REALISTIC_SCENARIO, REALISTIC_DEMO_SCENARIOS } from './realisticSimulatedPrices';
+import {
+	CRON_EXPR,
+	ORACLE_ADDRESS,
+	ORACLE_UPDATER_PRIVATE_KEY,
+	RPC_URL,
+	LOCAL_CHAIN,
+} from './config/config';
+
+import {
+	RealisticSimulatedPriceGenerator,
+	DEFAULT_REALISTIC_SCENARIO,
+	REALISTIC_DEMO_SCENARIOS,
+} from './realisticSimulatedPrices';
 
 type PriceWithSource = { source: 'vast' | 'akash'; price: number };
 
@@ -22,16 +32,17 @@ const median = (values: number[]): number | null => {
 	return n % 2 === 1 ? xs[mid] : (xs[mid - 1] + xs[mid]) / 2;
 };
 
-// Mirror of on-chain enum PriceSource (Unknown=0, VastAI=1, Akash=2, Combined=3, Manual=4)
+// Mirror of on-chain enum PriceSource (Unknown=0, VastAI=1, Akash=2, Combined=3, Manual=4, Simulated=5)
 const PriceSource = {
 	Unknown: 0,
 	VastAI: 1,
 	Akash: 2,
 	Combined: 3,
 	Manual: 4,
+	Simulated: 5,
 } as const;
 
-// Global realistic simulated price generator for demo
+// Optional realistic simulated price generator (injected)
 let realisticPriceGenerator: RealisticSimulatedPriceGenerator | null = null;
 
 async function publishPriceToOracle(price: number, source: number): Promise<void> {
@@ -48,13 +59,13 @@ async function publishPriceToOracle(price: number, source: number): Promise<void
 	const priceFixed = toFixedPoint(price);
 	const nowSec = Math.floor(Date.now() / 1000);
 
+	// Use Combined as source when aggregating multiple feeds
+
 	await wallet.writeContract({
 		address: ORACLE_ADDRESS as `0x${string}`,
-		abi: parseAbi([
-			'function updatePrice(uint256 _price, uint256 _ts, uint8 _source)'
-		]),
+		abi: parseAbi(['function updatePrice(uint256 _price, uint256 _ts, uint8 _source)']),
 		functionName: 'updatePrice',
-		chain: foundry,
+		chain: LOCAL_CHAIN,
 		args: [priceFixed, BigInt(nowSec), source],
 	});
 
@@ -68,12 +79,16 @@ export const publishMedianPrice = async (): Promise<void> => {
 		const realMarketPrice = realisticPriceGenerator.getRealMarketPrice();
 
 		if (realMarketPrice) {
-			logger.info(`Using realistic simulated price: $${simulatedPrice.toFixed(4)}/hour (based on real market: $${realMarketPrice.toFixed(4)}/hour)`);
+			logger.info(
+				`Using realistic simulated price: $${simulatedPrice.toFixed(4)}/hour (based on real market: $${realMarketPrice.toFixed(4)}/hour)`,
+			);
 		} else {
-			logger.info(`Using realistic simulated price: $${simulatedPrice.toFixed(4)}/hour (fallback mode)`);
+			logger.info(
+				`Using realistic simulated price: $${simulatedPrice.toFixed(4)}/hour (fallback mode)`,
+			);
 		}
 
-		await publishPriceToOracle(simulatedPrice, PriceSource.Manual);
+		await publishPriceToOracle(simulatedPrice, PriceSource.Simulated);
 		return;
 	}
 
@@ -100,10 +115,15 @@ export const publishMedianPrice = async (): Promise<void> => {
 	await publishPriceToOracle(m, PriceSource.Combined);
 };
 
-export const startPriceScheduler = (cronExpr = CRON_EXPR): void => {
-	// Initialize realistic simulated price generator for demo
-	realisticPriceGenerator = new RealisticSimulatedPriceGenerator(DEFAULT_REALISTIC_SCENARIO);
-	logger.info('Realistic simulated price generator initialized for demo mode');
+export const startPriceScheduler = (
+	cronExpr = CRON_EXPR,
+	simulator: RealisticSimulatedPriceGenerator | null = null,
+): void => {
+	// Inject simulator if provided
+	realisticPriceGenerator = simulator;
+	if (realisticPriceGenerator) {
+		logger.info('Realistic simulated price generator enabled');
+	}
 
 	cron.schedule(cronExpr, () => {
 		publishMedianPrice().catch((err) => logger.error(`publishMedianPrice failed: ${err}`));
