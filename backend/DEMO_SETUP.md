@@ -47,43 +47,43 @@ The system includes 5 pre-configured price scenarios:
 
 ### Stable Market
 
--   **Base Price**: $2.50/hour
--   **Volatility**: 5%
--   **Trend**: Slight upward
--   **Updates**: Every 5 seconds
--   **Use Case**: Show stable compute pricing
+- **Base Price**: $2.50/hour
+- **Volatility**: 5%
+- **Trend**: Slight upward
+- **Updates**: Every 5 seconds
+- **Use Case**: Show stable compute pricing
 
 ### Volatile Market (Default)
 
--   **Base Price**: $2.50/hour
--   **Volatility**: 15%
--   **Trend**: No overall trend
--   **Updates**: Every 3 seconds
--   **Use Case**: Demonstrate price discovery
+- **Base Price**: $2.50/hour
+- **Volatility**: 15%
+- **Trend**: No overall trend
+- **Updates**: Every 3 seconds
+- **Use Case**: Demonstrate price discovery
 
 ### Bull Market
 
--   **Base Price**: $2.50/hour
--   **Volatility**: 8%
--   **Trend**: Strong upward
--   **Updates**: Every 4 seconds
--   **Use Case**: Show rising compute demand
+- **Base Price**: $2.50/hour
+- **Volatility**: 8%
+- **Trend**: Strong upward
+- **Updates**: Every 4 seconds
+- **Use Case**: Show rising compute demand
 
 ### Bear Market
 
--   **Base Price**: $2.50/hour
--   **Volatility**: 8%
--   **Trend**: Strong downward
--   **Updates**: Every 4 seconds
--   **Use Case**: Show falling compute demand
+- **Base Price**: $2.50/hour
+- **Volatility**: 8%
+- **Trend**: Strong downward
+- **Updates**: Every 4 seconds
+- **Use Case**: Show falling compute demand
 
 ### Extreme Volatility
 
--   **Base Price**: $2.50/hour
--   **Volatility**: 25%
--   **Trend**: No trend, pure chaos
--   **Updates**: Every 2 seconds
--   **Use Case**: Demonstrate extreme market conditions
+- **Base Price**: $2.50/hour
+- **Volatility**: 25%
+- **Trend**: No trend, pure chaos
+- **Updates**: Every 2 seconds
+- **Use Case**: Demonstrate extreme market conditions
 
 ## 🎮 Demo Controls
 
@@ -125,50 +125,50 @@ console.log(`Current price: $${price}/hour`);
 
 Show how traders could:
 
--   Take long positions when prices are expected to rise
--   Take short positions when prices are expected to fall
--   Hedge against compute cost fluctuations
+- Take long positions when prices are expected to rise
+- Take short positions when prices are expected to fall
+- Hedge against compute cost fluctuations
 
 ### 2. Compute-Backed Loans
 
 Demonstrate:
 
--   Using compute hours as collateral
--   Dynamic collateral valuation based on oracle prices
--   Liquidation mechanisms when prices fall
+- Using compute hours as collateral
+- Dynamic collateral valuation based on oracle prices
+- Liquidation mechanisms when prices fall
 
 ### 3. Automated Arbitrage
 
 Show:
 
--   Cross-marketplace price differences
--   Automated trading between Vast.ai and Akash
--   Risk-free profit opportunities
+- Cross-marketplace price differences
+- Automated trading between Vast.ai and Akash
+- Risk-free profit opportunities
 
 ### 4. Compute Insurance
 
 Illustrate:
 
--   Hedging against compute price spikes
--   Insurance products for compute consumers
--   Risk management for compute providers
+- Hedging against compute price spikes
+- Insurance products for compute consumers
+- Risk management for compute providers
 
 ## 🔧 Technical Details
 
 ### Price Simulation Features
 
--   **Realistic Volatility**: Simulates market noise and price swings
--   **Trend Components**: Gradual price movements over time
--   **Micro-trends**: Short-term cyclical patterns
--   **Price Spikes**: Random events simulating news or demand shocks
--   **Bounded Prices**: Prevents unrealistic price levels
+- **Realistic Volatility**: Simulates market noise and price swings
+- **Trend Components**: Gradual price movements over time
+- **Micro-trends**: Short-term cyclical patterns
+- **Price Spikes**: Random events simulating news or demand shocks
+- **Bounded Prices**: Prevents unrealistic price levels
 
 ### Oracle Integration
 
--   **Fixed-Point Precision**: 18-decimal precision for financial calculations
--   **Source Tracking**: Tracks price source (Manual for simulated prices)
--   **Staleness Protection**: Reverts if prices are older than 2 hours
--   **Access Control**: Only authorized updaters can modify prices
+- **Fixed-Point Precision**: 18-decimal precision for financial calculations
+- **Source Tracking**: Tracks price source (Manual for simulated prices)
+- **Staleness Protection**: Reverts if prices are older than 2 hours
+- **Access Control**: Only authorized updaters can modify prices
 
 ### Demo Architecture
 
@@ -219,27 +219,27 @@ Illustrate:
 
 Watch for:
 
--   Price updates every 30 seconds
--   Scenario changes
--   Blockchain transaction confirmations
--   Error messages
+- Price updates every 30 seconds
+- Scenario changes
+- Blockchain transaction confirmations
+- Error messages
 
 ### Oracle Contract
 
 Monitor:
 
--   Current price: `oracle.currentPrice()`
--   Last update: `oracle.lastTimestamp()`
--   Price source: `oracle.lastSource()`
+- Current price: `oracle.currentPrice()`
+- Last update: `oracle.lastTimestamp()`
+- Price source: `oracle.lastSource()`
 
 ### Demo Metrics
 
 Track:
 
--   Price volatility over time
--   Update frequency
--   Scenario effectiveness
--   System reliability
+- Price volatility over time
+- Update frequency
+- Scenario effectiveness
+- System reliability
 
 ## 🛠️ Troubleshooting
 

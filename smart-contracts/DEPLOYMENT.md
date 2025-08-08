@@ -82,8 +82,8 @@ bun run entrypoint.ts
 
 ### Step 1: Get Testnet ETH
 
--   **Sepolia**: Use a faucet like https://sepoliafaucet.com/
--   **Goerli**: Use a faucet like https://goerlifaucet.com/
+- **Sepolia**: Use a faucet like https://sepoliafaucet.com/
+- **Goerli**: Use a faucet like https://goerlifaucet.com/
 
 ### Step 2: Set Environment Variables
 
@@ -108,9 +108,9 @@ forge script script/DeployH100Oracle.s.sol:DeployH100OracleScript \
 
 The deployment script automatically verifies:
 
--   Owner is set correctly
--   Deployer is set as trusted updater
--   Contract is deployed successfully
+- Owner is set correctly
+- Deployer is set as trusted updater
+- Contract is deployed successfully
 
 ### Testnet/Mainnet Verification
 
@@ -129,21 +129,21 @@ forge verify-contract \
 
 ### Private Key Management
 
--   **Never commit private keys to git**
--   Use environment variables or secure key management
--   For production, use hardware wallets or multisig
+- **Never commit private keys to git**
+- Use environment variables or secure key management
+- For production, use hardware wallets or multisig
 
 ### Access Control
 
--   The deployer becomes both owner and trusted updater
--   Owner can add/remove additional trusted updaters
--   Consider using a multisig for production deployments
+- The deployer becomes both owner and trusted updater
+- Owner can add/remove additional trusted updaters
+- Consider using a multisig for production deployments
 
 ### Network Security
 
--   Verify RPC endpoints are secure
--   Use HTTPS for testnet/mainnet connections
--   Consider using private RPC providers for production
+- Verify RPC endpoints are secure
+- Use HTTPS for testnet/mainnet connections
+- Consider using private RPC providers for production
 
 ## Troubleshooting
 
@@ -151,36 +151,36 @@ forge verify-contract \
 
 **1. "Insufficient funds"**
 
--   Ensure account has enough ETH for deployment
--   For local: Anvil provides 10,000 ETH per account
--   For testnet: Use faucets to get testnet ETH
+- Ensure account has enough ETH for deployment
+- For local: Anvil provides 10,000 ETH per account
+- For testnet: Use faucets to get testnet ETH
 
 **2. "Contract deployment failed"**
 
--   Check Solidity version compatibility
--   Verify all dependencies are installed
--   Check for compilation errors
+- Check Solidity version compatibility
+- Verify all dependencies are installed
+- Check for compilation errors
 
 **3. "Backend can't connect to oracle"**
 
--   Verify RPC_URL is correct
--   Ensure ORACLE_ADDRESS is the deployed contract address
--   Check that PRIVATE_KEY matches the deployer
+- Verify RPC_URL is correct
+- Ensure ORACLE_ADDRESS is the deployed contract address
+- Check that PRIVATE_KEY matches the deployer
 
 **4. "Price updates failing"**
 
--   Verify the private key has permission to update prices
--   Check that the oracle address is correct
--   Ensure the backend is running and scheduler is active
+- Verify the private key has permission to update prices
+- Check that the oracle address is correct
+- Ensure the backend is running and scheduler is active
 
 ## Demo Setup Checklist
 
--   [ ] Start Anvil local blockchain
--   [ ] Deploy H100Oracle contract
--   [ ] Update backend config with oracle address
--   [ ] Start backend scheduler
--   [ ] Verify price updates are working
--   [ ] Test oracle consumption from other contracts
+- [ ] Start Anvil local blockchain
+- [ ] Deploy H100Oracle contract
+- [ ] Update backend config with oracle address
+- [ ] Start backend scheduler
+- [ ] Verify price updates are working
+- [ ] Test oracle consumption from other contracts
 
 ## Next Steps After Deployment
 
