@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.26;
 
 /* ──────────────── external interfaces ───────────────────── */
 import { IERC20 } from 'lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol';
@@ -73,9 +73,8 @@ contract ForwardEscrow {
 		if (gpuHours == 0) revert SizeIsZero();
 
 		uint256 px = oracle.latestPrice(); // 1e18 USD
-		uint256 marginUsd18 = (gpuHours * px) / 1e18; // in 1e18
-		// Convert to USDC 6 decimals: divide by 1e12
-		uint256 marginUSDC = ((marginUsd18 * HAIRCUT_BPS) / 10_000) / 1e12; // 6 decimals
+		// Calculate margin: (gpuHours * px * HAIRCUT_BPS) / (10000 * 1e12)
+		uint256 marginUSDC = (gpuHours * px * HAIRCUT_BPS) / (10_000 * 1e12); // 6 decimals
 
 		require(usdc.transferFrom(msg.sender, address(this), marginUSDC), 'TRANSFER_FROM_FAIL');
 		credit[msg.sender] += marginUSDC; // escrow recorded
@@ -121,8 +120,7 @@ contract ForwardEscrow {
 		}
 
 		uint256 px = oracle.latestPrice(); // 1e18 USD
-		uint256 marginUsd18 = (p.size * px) / 1e18; // in 1e18
-		uint256 marginUSDC = ((marginUsd18 * HAIRCUT_BPS) / 10_000) / 1e12; // 6 decimals
+		uint256 marginUSDC = (p.size * px * HAIRCUT_BPS) / (10_000 * 1e12); // 6 decimals
 		require(usdc.transferFrom(msg.sender, address(this), marginUSDC), 'TRANSFER_FROM_FAIL');
 		credit[msg.sender] += marginUSDC;
 
@@ -151,20 +149,50 @@ contract ForwardEscrow {
 		uint256 px = oracle.latestPrice();
 		if (px == p.lastPrice) return;
 
-		int256 pnlUsd18 = int256(px) - int256(p.lastPrice);
-		pnlUsd18 = (pnlUsd18 * int256(p.size)) / 1e18; // scale by size
+		// Simple PnL calculation: (current_price - last_price) * size / 1e18
+		// Then convert to USDC: multiply by 1e6 and divide by 1e12
+		uint256 priceDiff;
+		bool isPositive;
 
-		uint256 usdcAmt = (uint256(pnlUsd18 > 0 ? pnlUsd18 : -pnlUsd18) * 1e6) / 1e18;
-		if (pnlUsd18 > 0) {
-			credit[p.long] += usdcAmt;
-			credit[p.short] -= usdcAmt;
+		if (px > p.lastPrice) {
+			priceDiff = px - p.lastPrice;
+			isPositive = true;
 		} else {
-			credit[p.short] += usdcAmt;
-			credit[p.long] -= usdcAmt;
+			priceDiff = p.lastPrice - px;
+			isPositive = false;
 		}
+
+		// Calculate PnL in USD (1e18): (priceDiff * size) / 1e18
+		uint256 pnlUsd18 = (priceDiff * p.size) / 1e18;
+
+		// Convert to USDC (1e6): (pnlUsd18 * 1e6) / 1e12
+		uint256 usdcAmt = (pnlUsd18 * 1e6) / 1e12;
+
+		if (usdcAmt > 0) {
+			if (isPositive) {
+				// Long wins, short loses
+				credit[p.long] += usdcAmt;
+				if (credit[p.short] >= usdcAmt) {
+					credit[p.short] -= usdcAmt;
+				} else {
+					credit[p.short] = 0;
+				}
+			} else {
+				// Short wins, long loses
+				credit[p.short] += usdcAmt;
+				if (credit[p.long] >= usdcAmt) {
+					credit[p.long] -= usdcAmt;
+				} else {
+					credit[p.long] = 0;
+				}
+			}
+		}
+
 		p.lastPrice = px;
 
-		emit Mark(id, px, pnlUsd18);
+		// Emit with signed PnL
+		int256 signedPnl = isPositive ? int256(pnlUsd18) : -int256(pnlUsd18);
+		emit Mark(id, px, signedPnl);
 	}
 
 	/* =======================================================

@@ -58,21 +58,21 @@ export const getH100SXMPrice = async (): Promise<number | null> => {
 
 // Akash helpers and fetcher
 const isAkashH100SXMModel = (model: AkashModel): boolean => {
-	const vendor = model.vendor?.trim().toLowerCase();
-	const name = model.model?.trim().toLowerCase();
-	const iface = model.interface?.trim().toUpperCase();
-	return vendor === 'nvidia' && name === 'h100' && iface === 'SXM5';
+  const vendor = model.vendor?.trim().toLowerCase();
+  const name = model.model?.trim().toLowerCase();
+  const iface = model.interface?.trim().toUpperCase();
+  return vendor === 'nvidia' && name === 'h100' && iface === 'SXM5';
 };
 
 export const getAkashH100SXMPrice = async (): Promise<number | null> => {
-	const url = 'https://console-api.akash.network/v1/gpu-prices';
-	const { data } = await axios.get<AkashGpuPrices>(url, {
-		headers: { Accept: 'application/json' },
-		timeout: 15000,
-	});
+  const url = 'https://console-api.akash.network/v1/gpu-prices';
+  const { data } = await axios.get<AkashGpuPrices>(url, {
+    headers: { Accept: 'application/json' },
+    timeout: 15000,
+  });
 
-	const models = data?.models ?? [];
-	const h100 = models.find(isAkashH100SXMModel);
-	if (!h100) return null;
-	return h100.price?.min ?? null;
+  const models = data?.models ?? [];
+  const h100 = models.find(isAkashH100SXMModel);
+  if (!h100) return null;
+  return h100.price?.min ?? null;
 };
