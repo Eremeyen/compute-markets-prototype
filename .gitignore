@@ -179,3 +179,13 @@ bun.lockb
 frontend/dist
 foundry/out
 foundry/cache
+
+# Foundry
+out/
+cache/
+broadcast/
+anvil.log
+demo_info.txt
+
+# Foundry run files
+broadcast/*/run-*.json

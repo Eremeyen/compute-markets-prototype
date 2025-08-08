@@ -1,6 +1,6 @@
 import { setDemoScenario, getCurrentSimulatedPrice, getRealMarketPrice, refreshRealMarketPrice } from './scheduler';
 import { REALISTIC_DEMO_SCENARIOS } from './realisticSimulatedPrices';
-import { logger } from './config/logger';
+import { logger } from '../config/logger';
 
 export class DemoController {
     /**
