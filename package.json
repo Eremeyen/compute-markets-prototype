@@ -1,11 +1,20 @@
 {
-  "name": "frontiers2025",
-  "module": "index.ts",
-  "type": "module",
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  }
+	"name": "frontiers2025",
+	"module": "index.ts",
+	"type": "module",
+	"devDependencies": {
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"scripts": {
+		"dev:frontend": "bun run --cwd frontend dev",
+		"dev:smart-contracts": "bun run --cwd smart-contracts dev",
+		"dev:backend": "bun run --cwd backend dev",
+		"test:smart-contracts": "bun run --cwd smart-contracts test",
+		"dev": "bun run parallel dev:frontend dev:smart-contracts dev:backend",
+		"format": "bunx prettier --write .",
+		"format:check": "bunx prettier --check ."
+	}
 }
