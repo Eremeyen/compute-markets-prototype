@@ -1,18 +1,16 @@
 import { ResponsiveContainer, LineChart, XAxis, YAxis, Tooltip, Line } from 'recharts';
-
-export type PricePoint = { t: number; p: number };
+import { PricePoint } from '../hooks/usePriceChart';
 
 type Props = {
 	data: PricePoint[];
-	windowSize?: number; // show only the last N points if provided
 };
 
-export function PriceChart({ data, windowSize }: Props) {
-	const series = windowSize && windowSize > 0 ? data.slice(-windowSize) : data;
+export function PriceChart({ data }: Props) {
+	// Data is already filtered by the hook, so we use it directly
 	return (
 		<div className="h-48 md:h-64 w-full">
 			<ResponsiveContainer width="100%" height="100%">
-				<LineChart data={series} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
+				<LineChart data={data} margin={{ left: 12, right: 12, top: 8, bottom: 8 }}>
 					<XAxis dataKey="t" tick={{ fontSize: 12 }} stroke="#666" />
 					<YAxis tick={{ fontSize: 12 }} stroke="#666" domain={['auto', 'auto']} />
 					<Tooltip
