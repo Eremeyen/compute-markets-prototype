@@ -4,6 +4,8 @@ import { usePriceChart } from './hooks/usePriceChart';
 import { useAuth } from './hooks/useAuth';
 import { PriceChart } from './components/PriceChart';
 import { StatusBar } from './components/StatusBar';
+import { AnimatedTitle } from './components/AnimatedTitle';
+import { TITLE_ANIMATION } from './config/animation';
 import { OrderBoard } from './components/OrderBoard';
 import { OpenOrderForm } from './components/OpenOrderForm';
 import { YourPositions } from './components/YourPositions';
@@ -72,9 +74,14 @@ function App() {
 							alt="Champaign Compute Exchange Logo"
 							className="h-16 w-16 md:h-20 md:w-20"
 						/>
-						<h1 className="font-extrabold text-3xl md:text-4xl">
-							Champaign Compute Exchange
-						</h1>
+					<h1 className="font-extrabold text-3xl md:text-4xl">
+						<AnimatedTitle
+							full="Champaign Compute Exchange"
+							short="CCE"
+							delayMs={TITLE_ANIMATION.DELAY_MS}
+							oncePerSession
+						/>
+					</h1>
 					</div>
 					<button
 						onClick={handleAuth}
